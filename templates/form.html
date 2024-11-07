@@ -1,0 +1,165 @@
+<!-- templates/form.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SASA Calculation Results</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="hamburger" id="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <div class="page">
+        <aside class="menu" id="menu">
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Upload</a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Help</a></li>
+            </ul>
+        </aside>
+        <div class="container mt-5">
+            <div class="header">
+                <h1>SASA Calculation</h1>
+            </div>
+            
+            <form action="/calculate" method="post" enctype="multipart/form-data">
+                <div class="form-group buttons">
+                    <button type="button" id="file_button" class="btn btn-primary">
+                        Choose File
+                    </button>
+                    <input type="file" name="file_upload" id="file_upload" class="form-control" style="display: none;">
+                    <span>or</span>
+                    <button type="button" id="use_api" class="btn btn-primary">
+                        Use PDB Name
+                    </button>
+                </div>
+                <div class="form-group name hidden">
+                    <label for="pdb_name" class="short">PDB id:</label>
+                    <input type="text" name="pdb_name" id="pdb_name">
+                </div>
+                <div class="form-group">
+                    <label for="email" class="short">E-mail:</label>
+                    <input type="email" name="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="advanced">Advanced options</label>
+                    <input type="checkbox" name="advanced" id="advanced" hidden>
+                </div>
+                <div class="form-collector hidden">
+                    <div class="form-group">
+                        <label for="classifier">Classifier:</label>
+                        <select name="classifier" id="classifier" class="form-control">
+                            <option value="NACCESS">NACCESS</option>
+                            <option value="PROTOR">PROTOR</option>
+                            <option value="OONS">OONS</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="algorithm">Algorithm:</label>
+                        <select name="algorithm" id="algorithm" class="form-control">
+                            <option value="LR" selected>Lee-Richards</option>
+                            <option value="SR">Shrake-Ruppley</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="parameter">Parameter:</label>
+                        <input type="number" name="parameter" id="parameter" class="form-control" placeholder="Enter a parameter value" value="20" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="radius">Probe Radius:</label>
+                        <input type="number" step="0.01" name="radius" id="radius" class="form-control" placeholder="Enter a radius value" value="1.4" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="depth">Depth:</label>
+                        <select name="depth" id="depth" class="form-control">
+                            <option value="Chains">Chains</option>
+                            <option value="Residue" selected>Residue</option>
+                            <option value="All">All</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="aa-container">
+                        <label for="aa">Amino Acid:</label>
+                        <select name="aa" id="aa" class="form-control">
+                            <option value="All">All</option>
+                            <option value="RES">RES</option>
+                            <option value="ALA">ALA</option>
+                            <option value="ARG">ARG</option>
+                            <option value="ASN">ASN</option>
+                            <option value="ASP">ASP</option>
+                            <option value="CYS">CYS</option>
+                            <option value="GLN">GLN</option>
+                            <option value="GLU">GLU</option>
+                            <option value="GLY">GLY</option>
+                            <option value="HIS">HIS</option>
+                            <option value="ILE">ILE</option>
+                            <option value="LEU">LEU</option>
+                            <option value="LYS">LYS</option>
+                            <option value="MET">MET</option>
+                            <option value="PHE">PHE</option>
+                            <option value="PRO">PRO</option>
+                            <option value="SER">SER</option>
+                            <option value="THR">THR</option>
+                            <option value="TRP">TRP</option>
+                            <option value="TYR">TYR</option>
+                            <option value="VAL">VAL</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="format">Output Format:</label>
+                        <select name="format" id="format" class="form-control">
+                            <option value="" selected>Only preview</option>
+                            <option value="CSV">CSV</option>
+                            <option value="XML">XML</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Calculate</button>
+            </form>
+            {{ if . }}
+                <h2>SASA Calculation Results</h2>
+                <p>{{ .Title }}</p>
+                {{ range .Chains }}
+                <div class="chain accordion">
+                    <h4 class="accordion-button">Chain {{ .Chain }} (SASA: {{ .SASA }} Å)</h4>
+                    <div class="accordion-content">
+                        {{ range .Res }}
+                        <div class="residue accordion">
+                            <h5 class="accordion-button">{{ .ResI }} <strong>{{ .Res }}</strong> (SASA: {{ .SASA }} Å)</h5>
+                            <div class="accordion-content">
+                                {{ range .Atoms }}
+                                <div class="atoms {{ .Symbol }}">
+                                    <strong>{{ .Name }}</strong>
+                                    <span class="id">ID: {{ .ID }}</span>
+                                    <span class="sasa">{{ .SASA }}</span>
+                                </div>
+                                {{ end }}
+                            </div>
+                        </div>
+                        {{ end }}
+                    </div>
+                </div>
+                {{ end }}
+            {{ end }}
+        </div>
+        <script>
+            const downloadUrl = "{{ .DownloadURL }}"; 
+    
+            if (downloadUrl) {
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                link.download = "result.csv";
+                link.style.display = "none";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        </script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="/static/main.js"></script>
+    </body>
+</html>

@@ -60,4 +60,39 @@ $(document).ready(function() {
     });
 
     $('#depth').trigger('change');
+
+    $('.tab').on('click', function () {
+        const tabId = $(this).data('tab');
+        $('.tab-content').hide();
+        $(`#${tabId}`).show();
+    });
+
+    // Form submission
+    $('#contactForm').on('submit', function (event) {
+        event.preventDefault();
+
+        // Collect form data
+        const formData = {
+            title: $('#title').val(),
+            subject: $('#subject').val(),
+            email: $('#email').val(),
+            text: $('#text').val(),
+            type: $('#type').val()
+        };
+
+        // Send data to backend
+        $.ajax({
+            url: '/submitContactForm', // Adjust URL to your Go backend endpoint
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function (response) {
+                alert('Thank you for your message!');
+                $('#contactForm')[0].reset();
+            },
+            error: function () {
+                alert('There was an error submitting your message. Please try again later.');
+            }
+        });
+    });
 });

@@ -15,12 +15,55 @@
     </div>
     <div class="page">
         <aside class="menu" id="menu">
-            <ul>
-                <li><a href="#">Home</a></li>
-                <li><a href="#">Upload</a></li>
-                <li><a href="#">Settings</a></li>
-                <li><a href="#">Help</a></li>
-            </ul>
+            <div id="offcanvas">
+                <div class="tabs">
+                    <button class="tab" data-tab="about">About</button>
+                    <button class="tab" data-tab="contact">Contact</button>
+                    <button class="tab" data-tab="help">Help</button>
+                </div>
+        
+                <div class="tab-content" id="about" style="display: block;">
+                    <h2>About the SASA Web App</h2>
+                    <p>This application calculates the Solvent Accessible Surface Area (SASA) for Protein Data Bank (PDB) files. SASA is an essential measure in structural biology and bioinformatics, providing insights into protein folding and interaction properties.</p>
+                    <p>The SASA calculation can be performed using either the Lee-Richards or the Shrake-Rupley algorithm, each providing distinct accuracy and computational efficiency based on different approaches to molecular surface approximation.</p>
+                </div>
+        
+                <div class="tab-content" id="contact">
+                    <h2>Contact Us</h2>
+                    <form id="contactForm">
+                        <label for="title">Title:</label>
+                        <input type="text" id="title" name="title" required>
+        
+                        <label for="subject">Subject:</label>
+                        <input type="text" id="subject" name="subject" required>
+        
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+        
+                        <label for="text">Message:</label>
+                        <textarea id="text" name="text" required></textarea>
+        
+                        <label for="type">Type:</label>
+                        <select id="type" name="type">
+                            <option value="suggestion">Suggestion</option>
+                            <option value="bug report">Bug Report</option>
+                            <option value="review">Review</option>
+                            <option value="contact">Contact</option>
+                        </select>
+        
+                        <button type="submit">Submit</button>
+                    </form>
+                </div>
+        
+                <div class="tab-content" id="help">
+                    <h2>Help</h2>
+                    <ul>
+                        <li>To start, upload a PDB file for SASA calculation.</li>
+                        <li>Select the algorithm for computation – Lee-Richards or Shrake-Rupley.</li>
+                        <li>View the results on the results page, or download them as needed.</li>
+                    </ul>
+                </div>
+            </div>
         </aside>
         <div class="container mt-5">
             <div class="header">

@@ -2,21 +2,35 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sasa/src"
 	"strconv"
 	"time"
+
+	"github.com/sendgrid/sendgrid-go"
+	"github.com/sendgrid/sendgrid-go/helpers/mail"
 )
+
+type ContactForm struct {
+	Title   string `json:"title"`
+	Subject string `json:"subject"`
+	Email   string `json:"email"`
+	Text    string `json:"text"`
+	Type    string `json:"type"`
+}
 
 func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	http.HandleFunc("/", formHandler)
 	http.HandleFunc("/calculate", calculateHandler)
+	http.HandleFunc("/submitContactForm", submitContactForm)
 	log.Println("Server started at http://localhost:8888")
 	http.ListenAndServe(":8888", nil)
 }
@@ -39,6 +53,26 @@ func serveForm(w http.ResponseWriter, formTemplatePath string) {
 		http.Error(w, "Error rendering form", http.StatusInternalServerError)
 		log.Println("Render error:", err)
 	}
+}
+
+func submitContactForm(w http.ResponseWriter, r *http.Request) {
+	var form ContactForm
+	err := json.NewDecoder(r.Body).Decode(&form)
+	if err != nil {
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	file, err := os.OpenFile("contact_form_submissions.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		http.Error(w, "Could not save data", http.StatusInternalServerError)
+		return
+	}
+	defer file.Close()
+
+	entry, _ := json.Marshal(form)
+	file.WriteString(string(entry) + "\n")
+	w.WriteHeader(http.StatusOK)
 }
 
 func calculateHandler(w http.ResponseWriter, r *http.Request) {
@@ -145,6 +179,14 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 		treeResult.DownloadURL = downloadPath
 	}
 
+	if len(outputFile) > 0 {
+		if err := sendEmailWithAttachment(email, pdbName, outputFile, outputFormat); err != nil {
+			http.Error(w, "Error sending email", http.StatusInternalServerError)
+			log.Println("Email error:", err)
+			return
+		}
+	}
+
 	// Serve the form with the JSON data included
 	formTemplatePath := filepath.Join("templates", "form.html")
 	w.Header().Set("Content-Type", "text/html")
@@ -161,4 +203,34 @@ func calculateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error rendering form", http.StatusInternalServerError)
 		log.Println("Render error:", err)
 	}
+}
+
+func sendEmailWithAttachment(toEmail, pdbName string, outputFile []byte, format string) error {
+	from := mail.NewEmail("SASA calculation", "noreply@sasacalc.com")
+	to := mail.NewEmail("Recipient", toEmail)
+	subject := fmt.Sprintf("SASA Calculation Results for %s", pdbName)
+
+	content := mail.NewContent("text/plain", "Please find attached the calculated SASA results.")
+	message := mail.NewV3MailInit(from, subject, to, content)
+
+	fileExtension := map[string]string{
+		"CSV": "text/csv",
+		"XML": "application/xml",
+	}[format]
+	attachment := mail.NewAttachment()
+	attachment.SetContent(string(outputFile))
+	attachment.SetType(fileExtension)
+	attachment.SetFilename(fmt.Sprintf("%s.%s", pdbName, format))
+	attachment.SetDisposition("attachment")
+	message.AddAttachment(attachment)
+
+	client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+	response, err := client.Send(message)
+	if err != nil {
+		return err
+	}
+
+	// Optionally log response details
+	log.Printf("Email sent. Status Code: %d\n", response.StatusCode)
+	return nil
 }
